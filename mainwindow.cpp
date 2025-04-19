@@ -23,6 +23,57 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::parcer()
+{
+
+    QFile file(":/test.xml");
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Ошибка открытия файла!";
+        return;
+    }
+
+    QDomDocument doc;
+    if (!doc.setContent(&file)) {
+        qDebug() << "Ошибка парсинга XML!";
+        file.close();
+        return;
+    }
+
+    QDomElement root = doc.documentElement();
+    QDomNodeList objects = root.elementsByTagName("object"); // Список всех <object>
+
+    for (int i = 0; i < objects.size(); ++i) {
+        QVector<QPoint> arrPointObj;
+        QDomElement obj = objects.at(i).toElement();
+        QString durability = obj.firstChildElement("durability").text();
+
+        // Чтение точек
+        QDomElement points = obj.firstChildElement("points");
+        QDomNodeList pointList = points.elementsByTagName("point"); // список всех поинтов
+        for (int j = 0; j < pointList.size(); ++j) {
+            QDomElement point = pointList.at(j).toElement();
+            int x = point.attribute("x").toInt();
+            int y = point.attribute("y").toInt();
+            QPoint pointCord(x,y);
+            arrPointObj.append(pointCord);
+            qDebug() << "Точка:" << x << "," << y;
+        }
+        draw(arrPointObj);
+
+    }
+    file.close();
+}
+
+void MainWindow::draw(QVector<QPoint> ap)
+{
+    QPolygon pol;
+    if (ap.size() < 3) return;
+    for (int i = 0; i < ap.size(); i++) {
+        pol << ap[i];
+    }
+    scene->addPolygon(pol, QPen(Qt::green));
+}
+
 void MainWindow::design_set(){
     //настройки дизайна
     ui->mapEdit_box->setStyleSheet(
@@ -117,13 +168,8 @@ void MainWindow::design_set(){
         );
 }
 
-void MainWindow::on_pushButton_pressed()
-{
-
-}
-
 void MainWindow::handleSceneClick(const QPointF& pos) {
-    QPixmap icon(":/finish(1).png"); //картинка из папочки ресурсы ебать
+    QPixmap icon(":/heart.png"); //картинка из папочки ресурсы ебать
     if (icon.isNull()) { //у вас винда не ебу сработает или нет а так хоть узнаем
         qDebug() << "Картинки нет";
         return;
@@ -136,12 +182,18 @@ void MainWindow::handleSceneClick(const QPointF& pos) {
     qDebug() << "Точки:" << arrpoint;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_createPath_but_clicked()
 {
     if (arrpoint.size() >= 2) {
         QPoint p1 = arrpoint[arrpoint.size() - 2];
         QPoint p2 = arrpoint[arrpoint.size() - 1];
         scene->addLine(p1.x(), p1.y(), p2.x(), p2.y(), QPen(Qt::red, 2)); //две последнии точки соединяет
     }
+}
+
+
+void MainWindow::on_imp_but_clicked()
+{
+    parcer();
 }
 

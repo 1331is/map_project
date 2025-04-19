@@ -3,5 +3,6 @@
         <file>finish(1).png</file>
         <file>icon.png</file>
         <file>heart.png</file>
+        <file>test.xml</file>
     </qresource>
 </RCC>
