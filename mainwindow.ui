@@ -573,9 +573,8 @@
      <string>Задать маршрут</string>
     </property>
     <property name="icon">
-     <iconset>
-      <selectedon>:/finish(1).png</selectedon>
-     </iconset>
+     <iconset resource="icon.qrc">
+      <normaloff>:/heart.png</normaloff>:/heart.png</iconset>
     </property>
     <property name="checkable">
      <bool>false</bool>
@@ -703,6 +702,8 @@
    </widget>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="icon.qrc"/>
+ </resources>
  <connections/>
 </ui>
