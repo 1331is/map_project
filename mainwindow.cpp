@@ -7,18 +7,114 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     scene = new handleClick(this);
-    ui->graphicsView->setScene(scene);
-    scene->setSceneRect(0, 0, 800, 600); //эти строчки чтобы сцена не растягивался и координатв точек нормальными были
-    ui->graphicsView->setFixedSize(800, 600);
-    ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->map_box->setScene(scene);
+    scene->setSceneRect(0, 0, 1090, 670); //эти строчки чтобы сцена не растягивался и координатв точек нормальными были
+    ui->map_box->setFixedSize(1090, 670);
+    ui->map_box->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->map_box->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     connect(scene, &handleClick::sceneClicked,
-            this, &MainWindow::handleSceneClick); //коннект ебать
+            this, &MainWindow::handleSceneClick); //коннект
+    design_set();
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::design_set(){
+    //настройки дизайна
+    ui->mapEdit_box->setStyleSheet(
+        "QGroupBox {"
+        "   background-color: #9BAC68;"  // Цвет фона
+        "   border: 2px solid #818F54;"     // Рамка
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QGroupBox::title {"
+        "   padding: 0 5px;"             // Отступы вокруг текста заголовка
+        "   top: 5px"
+        "   left: 1px"
+        "   font-size: 15px;"
+        "}"
+        );
+    ui->addObj_but->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #818F54;"  // Цвет фона
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #627049;  "
+        "}"
+        );
+    ui->delObj_but->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #818F54;"  // Цвет фона
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #627049;  "
+        "}"
+        );
+    ui->imp_but->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #818F54;"  // Цвет фона
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #627049;  "
+        "}"
+        );
+    //кнопка маршрута
+    ui->createPath_but->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #F5B8DA;"  // Цвет фона
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #D47F9D;  "
+        "}"
+        );
+    //блок сохранения
+    ui->save_box->setStyleSheet(
+        "QGroupBox {"
+        "   background-color: #F6D868;"  // Цвет фона
+        "   border: 2px solid #D9BB42;"     // Рамка
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QGroupBox::title {"
+        "   subcontrol-origin: margin;"
+        "   padding: 0 5px;"             // Отступы вокруг текста заголовка
+        "   top: 10px"
+        "   left: 5px"
+        "}"
+        );
+    ui->saveMap_but->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #D9BB42;"  // Цвет фона
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #D6A83F;  "
+        "}"
+        );
+    ui->savePath_but->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #D9BB42;"  // Цвет фона
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #D6A83F;  "
+        "}"
+        );
+
+    ui->map_box->setStyleSheet(
+        "QGraphicsView {"
+        "   background-color: #FFFFFF;"  // Цвет фона
+        "   border: 2px solid #EDE7D9;"
+        "   border-radius: 15px;"          // Закругление углов
+        "}"
+        );
 }
 
 void MainWindow::on_pushButton_pressed()
