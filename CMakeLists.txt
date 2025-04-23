@@ -25,7 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         icon.qrc
         handleclick.h handleclick.cpp
-        ../../tinyxml2/tinyxml2.h ../../tinyxml2/tinyxml2.cpp
+
 
     )
 # Define target properties for Android with Qt 6 as:
