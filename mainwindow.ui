@@ -523,6 +523,9 @@
     </size>
    </property>
    <widget class="QGraphicsView" name="map_box">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>180</x>
@@ -557,24 +560,20 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>330</y>
+      <y>170</y>
       <width>160</width>
-      <height>71</height>
+      <height>51</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>Segoe UI</family>
       <pointsize>10</pointsize>
-      <bold>true</bold>
+      <bold>false</bold>
      </font>
     </property>
     <property name="text">
      <string>Задать маршрут</string>
-    </property>
-    <property name="icon">
-     <iconset resource="icon.qrc">
-      <normaloff>:/heart.png</normaloff>:/heart.png</iconset>
     </property>
     <property name="checkable">
      <bool>false</bool>
@@ -587,17 +586,17 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>30</y>
+      <y>230</y>
       <width>160</width>
-      <height>211</height>
+      <height>281</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>Segoe UI</family>
       <pointsize>10</pointsize>
       <italic>false</italic>
-      <bold>true</bold>
+      <bold>false</bold>
       <underline>false</underline>
       <kerning>true</kerning>
      </font>
@@ -615,10 +614,20 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>30</y>
+       <y>40</y>
        <width>140</width>
        <height>51</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+       <kerning>true</kerning>
+      </font>
      </property>
      <property name="text">
       <string>Добавить объект</string>
@@ -628,10 +637,20 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>90</y>
+       <y>100</y>
        <width>140</width>
        <height>51</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+       <kerning>true</kerning>
+      </font>
      </property>
      <property name="text">
       <string>Удалить объект</string>
@@ -641,64 +660,139 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>150</y>
+       <y>160</y>
        <width>140</width>
        <height>51</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+       <kerning>true</kerning>
+      </font>
      </property>
      <property name="text">
       <string>Импортировать</string>
      </property>
     </widget>
-   </widget>
-   <widget class="QGroupBox" name="save_box">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>540</y>
-      <width>160</width>
-      <height>151</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-      <pointsize>10</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="title">
-     <string>Сохранить</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignmentFlag::AlignCenter</set>
-    </property>
     <widget class="QPushButton" name="saveMap_but">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>30</y>
-       <width>140</width>
+       <y>220</y>
+       <width>141</width>
        <height>51</height>
       </rect>
      </property>
-     <property name="text">
-      <string>Карту</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="savePath_but">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>90</y>
-       <width>140</width>
-       <height>51</height>
-      </rect>
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+       <pointsize>10</pointsize>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+       <kerning>true</kerning>
+      </font>
      </property>
      <property name="text">
-      <string>Маршрут</string>
+      <string>Сохранить</string>
      </property>
     </widget>
+   </widget>
+   <widget class="QPushButton" name="cancel_but">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>660</y>
+      <width>161</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Отмена</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ok_but">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>620</y>
+      <width>161</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>ОК</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="transp_label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>560</y>
+      <width>131</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Непроходимость (%):</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="transp_box">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>580</y>
+      <width>161</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>100</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="logo_img">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>30</y>
+      <width>111</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap resource="icon.qrc">:/heart.png</pixmap>
+    </property>
    </widget>
   </widget>
  </widget>
