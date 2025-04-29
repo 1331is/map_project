@@ -1,22 +1,26 @@
-<objects>
-    <object id="1">
-        <durability>75%</durability>
-        <points>
-            <point x="20" y="20" /> 
-            <point x="20" y="90" /> 
-            <point x="80" y="90" />  
-            <point x="80" y="20" />  
-        </points>
-    </object>
+<map>
+    <resolution x="1090" y="670" />
+    <scale>1</scale>
+    <objects>
+        <object id="1">
+            <durability>75%</durability>
+            <points>
+                <point x="20" y="20" /> 
+                <point x="20" y="90" /> 
+                <point x="80" y="90" />  
+                <point x="80" y="20" />  
+            </points>
+        </object>
 
-    <object id="2">
-        <durability>90%</durability>
-        <points>
-            <point x="120" y="60" />
-            <point x="90" y="120" />
-            <point x="150" y="120" />
-            <point x="80" y="140" />
-            <point x="140" y="140" />
-        </points>
-    </object>
-</objects>
+        <object id="2">
+            <durability>90%</durability>
+            <points>
+                <point x="120" y="60" />
+                <point x="90" y="120" />
+                <point x="150" y="120" />
+                <point x="80" y="140" />
+                <point x="140" y="140" />
+            </points>
+        </object>
+    </objects>
+</map>

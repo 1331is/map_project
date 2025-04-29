@@ -1,12 +1,16 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QMainWindow>
+#include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QStatusBar>
 #include <QDebug>
 #include <QGraphicsPixmapItem>
 #include <QDomDocument>
 #include <QFile>
+#include "obj.h"
 #include "handleclick.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -20,13 +24,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    QVector<QPoint> arrpoint; //здесь хранить точки и потом по ним отрисовывать маршрут
-    void parcer();
-    void draw(QVector<QPoint> ap, int, int);
+
 private slots:
     void handleSceneClick(const QPointF& pos); // получаем сигнал о том, что мышка была нажата на сцене и обрабатываем
-    void design_set();
-    //обработчки нажатия на кнопку
     void on_createPath_but_clicked();
     void on_addObj_but_clicked();
     void on_delObj_but_clicked();
@@ -34,11 +34,24 @@ private slots:
     void on_saveMap_but_clicked();
     void on_ok_but_clicked();
     void on_cancel_but_clicked();
+    void on_mapWidth_edit_Return_Pressed();
+    void on_mapHeight_edit_Return_Pressed();
+    void on_scaleDown_but_clicked();
+    void on_scaleUp_but_clicked();
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override; //обработчик события: курсор на карте
 
 private:
     Ui::MainWindow *ui;
     handleClick *scene; //сцена
-    int point_count; //количество поставленных точек
     int windStat; //текущее действие пользователя
+    float scale;
+    QVector<QPoint> arrpoint; //массив точек
+    QVector<Obj> arrobj; //массив объектов
+    void parcer(QString);
+    void draw(Obj object);
+    void design_set();
+
 };
 #endif // MAINWINDOW_H
