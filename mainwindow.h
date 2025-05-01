@@ -52,6 +52,8 @@ private:
     QVector<Obj> arrobj; //массив объектов
     QVector<QPoint> path;
     void parcer(QString);
+    QDomDocument pathFileMaker(qreal, qreal, qreal);
+    QDomDocument mapFileMaker();
     void draw(Obj object);
     void design_set();
 

@@ -26,6 +26,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         icon.qrc
         handleclick.h handleclick.cpp
         obj.h obj.cpp
+        astar.h astar.cpp
 
 
 

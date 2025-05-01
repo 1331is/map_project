@@ -8,9 +8,9 @@
 #include <QGraphicsScene>
 #include <QSet>
 #include <QVector>
-#include <queue>
 #include <cmath>
-
+#include "astar.h"
+//конструктор класса
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -20,23 +20,19 @@ MainWindow::MainWindow(QWidget *parent)
     //настройки сцены
     scene = new handleClick(this);
     ui->map_box->setScene(scene);
-    scene->setSceneRect(0, 0, 1090, 670); //чтобы сцена не растягивался и координатв точек нормальными были
+    scene->setSceneRect(0, 0, 1090, 670);
     ui->map_box->setFixedSize(1090, 670);
     ui->map_box->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     ui->map_box->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     connect(scene, &handleClick::sceneClicked,
             this, &MainWindow::handleSceneClick); //коннект
+    //коннект полей изменения ширины и высоты
     connect(ui->mapWidth_edit, &QLineEdit::returnPressed, this, &MainWindow::on_mapWidth_edit_Return_Pressed);
     connect(ui->mapHeight_edit, &QLineEdit::returnPressed, this, &MainWindow::on_mapHeight_edit_Return_Pressed);
-
+    //настройки дизайна окна
     design_set();
-    scale = 1;
-    windStat = 0; //статус окна: ожидание действий
+
 }
-
-
-
-
 
 
 //настройка дизайна
@@ -46,7 +42,7 @@ void MainWindow::design_set(){
     statusBar()->showMessage("Масштаб: 1px/m  |  Координаты: (0, 0)");
     ui->map_box->setMouseTracking(true); // Включаем отслеживание мыши
     ui->map_box->installEventFilter(this);
-
+    //Блок настройки карты
     ui->mapEdit_box->setStyleSheet(
         "QGroupBox {"
         "   background-color: #9BAC68;"  // Цвет фона
@@ -59,8 +55,9 @@ void MainWindow::design_set(){
         "}"
         );
     QFont font = ui->mapEdit_box->font();
-    font.setPointSize(18);  // Устанавливаем размер в пунктах
+    font.setPointSize(18);
     ui->mapEdit_box->setFont(font);
+    //кнопка добавить объект
     ui->addObj_but->setStyleSheet(
         "QPushButton {"
         "   background-color: #818F54;"  // Цвет фона
@@ -70,6 +67,7 @@ void MainWindow::design_set(){
         "   background-color: #627049;  "
         "}"
         );
+    //кнопка удалить объект
     ui->delObj_but->setStyleSheet(
         "QPushButton {"
         "   background-color: #818F54;"  // Цвет фона
@@ -79,6 +77,7 @@ void MainWindow::design_set(){
         "   background-color: #627049;  "
         "}"
         );
+    //кнопка импорт карты
     ui->imp_but->setStyleSheet(
         "QPushButton {"
         "   background-color: #818F54;"  // Цвет фона
@@ -88,7 +87,7 @@ void MainWindow::design_set(){
         "   background-color: #627049;  "
         "}"
         );
-    //кнопка маршрута
+    //кнопка создать маршрут
     ui->createPath_but->setStyleSheet(
         "QPushButton {"
         "   background-color: #F5B8DA;"  // Цвет фона
@@ -98,6 +97,7 @@ void MainWindow::design_set(){
         "   background-color: #D47F9D;  "
         "}"
         );
+    //кнопка сохранить маршрут
     ui->savePath_but->setStyleSheet(
         "QPushButton {"
         "   background-color: #F5B8DA;"  // Цвет фона
@@ -107,6 +107,7 @@ void MainWindow::design_set(){
         "   background-color: #D47F9D;  "
         "}"
         );
+    //кнопка сохранить карту
     ui->saveMap_but->setStyleSheet(
         "QPushButton {"
         "   background-color: #818F54;"  // Цвет фона
@@ -116,7 +117,7 @@ void MainWindow::design_set(){
         "   background-color: #627049;  "
         "}"
         );
-
+    //карта
     ui->map_box->setStyleSheet(
         "QGraphicsView {"
         "   background-color: #FFFFFF;"  // Цвет фона
@@ -143,6 +144,7 @@ void MainWindow::design_set(){
         "   background-color: #D6A83F;  "
         "}"
         );
+    //скрываем кнопки
     ui->ok_but->setVisible(0);
     ui->cancel_but->setVisible(0);
     ui->transp_box->setVisible(0);
@@ -150,210 +152,15 @@ void MainWindow::design_set(){
     ui->speed_label->setVisible(0);
     ui->speed_box->setVisible(0);
     ui->savePath_but->setVisible(0);
+    //ставивм ограничение на ввод чисел
     ui->transp_box->setValidator(new QIntValidator(this));
     ui->mapWidth_edit->setValidator(new QIntValidator(this));
     ui->mapHeight_edit->setValidator(new QIntValidator(this));
     ui->speed_box->setValidator(new QIntValidator(this));
-}
-
-
-// Структура для хранения информации о узле сетки
-struct Node {
-    QPoint pos;
-    qreal cost;         // Стоимость достижения узла
-    qreal heuristic;    // Эвристическая оценка
-    Node* parent = nullptr;
-
-    // Для приоритетной очереди
-    bool operator<(const Node& other) const {
-        return (cost + heuristic) < (other.cost + other.heuristic);
-    }
-    bool operator>(const Node& other) const {
-        return (cost + heuristic) > (other.cost + other.heuristic);
-    }
-};
-
-// Функция расчета стоимости перемещения
-qreal getMovementCost(const QPoint& from, const QPoint& to, const QGraphicsScene* scene) {
-    //Проверка пересечения с полигонами
-    qreal totalCost = 0.0;
-
-    QList<QGraphicsPolygonItem*> polygons;
-    foreach(QGraphicsItem* item, scene->items()) {
-        if (QGraphicsPolygonItem* polygon = dynamic_cast<QGraphicsPolygonItem*>(item)) {
-            polygons.append(polygon);
-        }
-    }
-    for (int j=0;j<polygons.size();j++) {
-        if(polygons[j]->contains(to)) {
-            qreal obstruction = polygons[j]->brush().color().alpha()/255;
-            if (obstruction >= 1.0)
-                return -1; // Полная непроходимость
-            totalCost += obstruction;
-        }
-    }
-    return totalCost;
-}
-
-// Функция A* для поиска пути
-QVector<QPoint> pathSearch(const QPoint& start, const QPoint& end, const QGraphicsScene* scene) {
-    QHash<QPoint, Node*> allNodes;
-    QHash<qreal, Node*> sortNodes;
-    std::priority_queue<Node*, std::vector<Node*>, std::greater<Node*>> openSet;
-    std::priority_queue<qreal, std::vector<qreal>, std::greater<qreal>> sortOpenSet;
-    QSet<QPoint> closedSet;
-
-
-
-    // 2. Создание начального узла
-    Node* startNode = new Node{start, 0, 0, nullptr};
-    startNode->heuristic = QLineF(start, end).length();
-    allNodes[start] = startNode;
-    sortNodes[startNode->heuristic+startNode->cost] = startNode;
-    openSet.push(startNode);
-    sortOpenSet.push(startNode->heuristic+startNode->cost);
-
-    // 3. Направления движения (8-соседняя сетка)
-    const QList<QPoint> directions = {
-        QPoint(-1, 0), QPoint(1, 0), QPoint(0, -1), QPoint(0, 1),
-        QPoint(-1, -1), QPoint(-1, 1), QPoint(1, -1), QPoint(1, 1)
-    };
-
-    // 4. Основной цикл алгоритма
-    while (!openSet.empty()) {
-        //Node* current = openSet.top();
-        Node* current = sortNodes.value(sortOpenSet.top());
-        openSet.pop();
-        sortOpenSet.pop();
-
-        // Цель достигнута
-        if (current->pos == end) {
-            QVector<QPoint> path;
-            while (current) {
-                path.prepend(current->pos);
-                current = current->parent;
-            }
-
-            // Очистка памяти
-            qDeleteAll(allNodes);
-            return path;
-        }
-
-        closedSet.insert(current->pos);
-
-        // 5. Обработка соседей
-        for (const QPoint& dir : directions) {
-            QPoint neighborPos = current->pos + dir;
-
-            // Проверка границ сцены
-            if (neighborPos.x() < 0 || neighborPos.x() >= scene->width() ||
-                neighborPos.y() < 0 || neighborPos.y() >= scene->height()) {
-                continue;
-            }
-
-            // Проверка на препятствия
-            qreal moveCost = getMovementCost(current->pos, neighborPos, scene);
-            if (moveCost == -1) continue; // Непроходимый узел
-
-            // Расчет стоимости
-            qreal newCost = current->cost + moveCost * (dir.x() && dir.y() ? 1.4 : 1.0);
-
-            // Создание или обновление узла
-            Node* neighbor = allNodes.value(neighborPos, nullptr);
-            if (!neighbor) {
-                neighbor = new Node{neighborPos,
-                                    std::numeric_limits<qreal>::max(),
-                                    QLineF(neighborPos, end).length(),
-                                    nullptr};
-                allNodes[neighborPos] = neighbor;
-            }
-
-            if (newCost < neighbor->cost) {
-                neighbor->cost = newCost;
-                neighbor->parent = current;
-
-                if (!closedSet.contains(neighborPos)) {
-                    openSet.push(neighbor);
-                    sortOpenSet.push(neighbor->cost+neighbor->heuristic);
-                    sortNodes[neighbor->cost+neighbor->heuristic] = neighbor;
-                }
-            }
-        }
-    }
-
-    // Путь не найден
-    qDeleteAll(allNodes);
-    return QVector<QPoint>();
-}
-
-//оптимизация маршрута
-QVector<QPoint> pathOptimis(QVector<QPoint> path, const QGraphicsScene* scene) {
-    qDebug() << "Пришло точек " << path.size();
-    //удаление точек с одной прямой
-    QVector<QPoint> optimizedPath;
-    optimizedPath.append(path.first());
-    for (int i = 0; i<path.size()-2;i++){
-        if (path[i]!=optimizedPath.last())
-            continue;
-        for (int j=i+1;j<path.size()-1;j++){
-            QPoint dir (path[j].x()-path[i].x(), path[j].y()-path[i].y());
-            if (!((abs(dir.x()) == abs(dir.y())) || (dir.x() == 0) || (dir.y() == 0))) {
-                optimizedPath.append(path[j]);
-                break;
-            }
-        }
-    }
-    optimizedPath.append(path.last());
-    qDebug() << "Стало точек " << optimizedPath.size();
-    path.clear();
-    path.append(optimizedPath.first());
-    //проверка на пересечения с полигонами
-    QList<QGraphicsPolygonItem*> polygons;
-    foreach(QGraphicsItem* item, scene->items()) {
-        if (QGraphicsPolygonItem* polygon = dynamic_cast<QGraphicsPolygonItem*>(item)) {
-            polygons.append(polygon);
-        }
-    }
-    QHash<QPoint, int> allPoints;
-    for (int i=0;i<optimizedPath.size();i++) {
-        for (int j = 0; j < polygons.size(); ++j) {
-            if (polygons[j]->contains(optimizedPath[i]))
-                allPoints[optimizedPath[i]]=polygons[j]->brush().color().alpha();
-        }
-        if (!allPoints.contains(optimizedPath[i]))
-            allPoints[optimizedPath[i]]=0;
-    }
-
-    for (int i=0;i<optimizedPath.size()-2;i++) {
-        for (int k=i+1;k<optimizedPath.size()-1;k++) {
-            for (int j = 0; j < polygons.size(); ++j) {
-                // Получаем полигон в координатах сцены
-                QPolygonF polygon = polygons[j]->mapToScene(polygons[j]->polygon());
-
-                QPainterPath linePath;
-                linePath.moveTo(optimizedPath[i]);
-                linePath.lineTo(optimizedPath[k]);
-                QPainterPathStroker stroker;
-                stroker.setWidth(1); // Минимальная толщина для точного пересечения
-                QPainterPath strokedLine = stroker.createStroke(linePath);
-
-                // Создаем путь из полигона
-                QPainterPath polygonPath;
-                polygonPath.addPolygon(polygon);
-
-                // Проверяем пересечение
-                if (strokedLine.intersects(polygonPath)) {
-                    if (allPoints[optimizedPath[i]]!=polygons[j]->brush().color().alpha()) {
-                        path.append(optimizedPath[k-1]);
-                        i=k-2;
-                    }
-                }
-            }
-        }
-    }
-    path.append(optimizedPath.last());
-    qDebug() << "Ушло точек " << path.size();
-    return path;
+    //статус окна: ожидание действий
+    windStat = 0;
+    //масштаб
+    scale = 1;
 }
 
 //нажатие на кнопку ок
@@ -381,13 +188,12 @@ void MainWindow::on_ok_but_clicked(){
                 delete pixmapItem;
             }
         }
-
+        //добавление объекта в массив
         bool ok;
         int transp = ui->transp_box->text().toInt(&ok);
-        arrobj.append(Obj(arrpoint, transp)); //добавление объекта в массив
-
-        draw(arrobj.last()); //рисование объекта
-        arrpoint.clear();
+        arrobj.append(Obj(arrpoint, transp));
+        //рисование объекта
+        draw(arrobj.last());
         break;
     }
         //пользователь удалил объект
@@ -424,14 +230,12 @@ void MainWindow::on_ok_but_clicked(){
 
             }
         }
-        arrpoint.clear();
         break;
     }
         //пользователь задал маршрут
     case 3: {
         //построить маршрут
-        path = pathSearch(arrpoint[0], arrpoint[1], scene);
-        path = pathOptimis(path, scene);
+        path = pathOptimis(pathSearch(arrpoint[0], arrpoint[1], scene), scene);
         // Визуализация пути
         QPainterPath visualPath;
         visualPath.moveTo(path.first());
@@ -439,18 +243,19 @@ void MainWindow::on_ok_but_clicked(){
             visualPath.lineTo(path[i]);
         }
         scene->addPath(visualPath, QPen(QColor("#BA6395"), 2));
+        //добавляем возможность сохранить маршрут
         ui->speed_label->setVisible(1);
         ui->speed_box->setVisible(1);
         ui->savePath_but->setVisible(1);
-        arrpoint.clear();
         break;
     }
     }
+    arrpoint.clear();
     windStat = 0; //статус окна: ожидание действий
 }
 
-//нажатие на кнопку сохранить маршрут
-void MainWindow::on_savePath_but_clicked() {
+//парсер??
+QDomDocument MainWindow::pathFileMaker(qreal pathLength, qreal pathSpeed, qreal pathTime){
     QDomDocument doc;
 
     //создаем корневой элемент
@@ -458,28 +263,20 @@ void MainWindow::on_savePath_but_clicked() {
     doc.appendChild(root);
 
     //длина
-    qreal pathLength = 0;
-    for (int i = 0; i < path.size() - 1; ++i) {
-        QLineF line(path[i].x(), path[i].y(), path[i+1].x(), path[i+1].y());
-        pathLength += line.length();
-    }
     QDomElement length = doc.createElement("length");
-    length.appendChild(doc.createTextNode(QString::number(pathLength/scale)+"м")); //длина в метрах
+    length.appendChild(doc.createTextNode(QString::number(pathLength)+"м"));
     root.appendChild(length);
 
     QDomElement speed = doc.createElement("speed");
-    speed.appendChild(doc.createTextNode(ui->speed_box->text()+"км/ч"));
+    speed.appendChild(doc.createTextNode(QString::number(pathSpeed)+"км/ч"));
     root.appendChild(speed);
 
     QDomElement time = doc.createElement("time");
-    bool ok;
-    time.appendChild(doc.createTextNode(QString::number(pathLength/scale/ui->speed_box->text().toInt(&ok)/1000)+"ч"));
+    time.appendChild(doc.createTextNode(QString::number(pathTime)+"ч"));
     root.appendChild(time);
 
     //контейнер точек
     QDomElement points = doc.createElement("points");
-
-
     for (int i=0;i<path.size();i++){
         //заголовок
         QDomElement point = doc.createElement("point");
@@ -489,8 +286,76 @@ void MainWindow::on_savePath_but_clicked() {
         points.appendChild(point);
     }
     root.appendChild(points);
+    return doc;
+}
+
+//парсер??
+QDomDocument MainWindow::mapFileMaker(){
+    QDomDocument doc;
+
+    //создаем корневой элемент
+    QDomElement root = doc.createElement("map");
+    doc.appendChild(root);
+
+    //разрешение
+    QDomElement resolution = doc.createElement("resolution");
+    resolution.setAttribute("x", QString::number(scene->sceneRect().width()));
+    resolution.setAttribute("y", QString::number(scene->sceneRect().height()));
+    root.appendChild(resolution);
+
+    //масштаб
+    QDomElement scaleElement = doc.createElement("scale");
+    scaleElement.appendChild(doc.createTextNode(QString::number(scale)));
+    root.appendChild(scaleElement);
+
+    //контейнер объектов
+    QDomElement objectsElement = doc.createElement("objects");
+    root.appendChild(objectsElement);
+
+    for (int i=0;i<arrobj.size();i++){
+        //заголовок
+        QDomElement objectElement = doc.createElement("object");
+        objectElement.setAttribute("id", QString::number(i+1));
+        objectsElement.appendChild(objectElement);
+
+        //проходимость
+        QDomElement durabilityElement = doc.createElement("durability");
+        durabilityElement.appendChild(doc.createTextNode(QString::number(arrobj[i].get_transp())+"%"));
+        objectElement.appendChild(durabilityElement);
+
+        //точки
+        QDomElement pointsElement = doc.createElement("points");
+        objectElement.appendChild(pointsElement);
+        for (const QPoint& p : arrobj[i].get_points()) {
+            QDomElement pointElement = doc.createElement("point");
+            pointElement.setAttribute("x", QString::number(p.x()));
+            pointElement.setAttribute("y", QString::number(p.y()));
+            pointsElement.appendChild(pointElement);
+        }
+    }
+    return doc;
+}
+
+//нажатие на кнопку сохранить маршрут
+void MainWindow::on_savePath_but_clicked() {
+
+    //длина
+    qreal pathLength = 0;
+    for (int i = 0; i < path.size() - 1; ++i) {
+        QLineF line(path[i].x(), path[i].y(), path[i+1].x(), path[i+1].y());
+        pathLength += line.length();
+    }
+    pathLength = pathLength/scale;
+
+    //скорость
+    bool ok;
+    qreal pathSpeed = ui->speed_box->text().toInt(&ok);
+
+    //время
+    qreal pathTime = pathLength/pathSpeed/1000;
 
     // Сохраняем в файл
+    QDomDocument doc = pathFileMaker(pathLength, pathSpeed, pathTime);
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"), "", tr("XML файлы (*.xml)"));
     if (!fileName.isEmpty()) {
         QFile file(fileName);
@@ -502,9 +367,6 @@ void MainWindow::on_savePath_but_clicked() {
         file.close();
     }
 }
-
-//ЗАКОНЧЕННЫЕ ФУНКЦИИ
-//В РЕДАКТИРОВАНИИ НЕ НУЖДАЮТСЯ
 
 //нажатие на кнопку задать маршрут
 void MainWindow::on_createPath_but_clicked()
@@ -557,7 +419,6 @@ void MainWindow::on_imp_but_clicked()
         ui->speed_box->setVisible(0);
         ui->savePath_but->setVisible(0);
         qDebug() << "Выбран файл:" << filePath;
-        // обработка файла
         parcer(filePath);
 
     }
@@ -566,50 +427,7 @@ void MainWindow::on_imp_but_clicked()
 
 //нажатие на кнопку сохранить карту
 void MainWindow::on_saveMap_but_clicked() {
-    QDomDocument doc;
-
-    //создаем корневой элемент
-    QDomElement root = doc.createElement("map");
-    doc.appendChild(root);
-
-    //разрешение
-    QDomElement resolution = doc.createElement("resolution");
-    resolution.setAttribute("x", QString::number(scene->sceneRect().width()));
-    resolution.setAttribute("y", QString::number(scene->sceneRect().height()));
-    root.appendChild(resolution);
-
-    //масштаб
-    QDomElement scaleElement = doc.createElement("scale");
-    scaleElement.appendChild(doc.createTextNode(QString::number(scale)));
-    root.appendChild(scaleElement);
-
-    //контейнер объектов
-    QDomElement objectsElement = doc.createElement("objects");
-    root.appendChild(objectsElement);
-
-    for (int i=0;i<arrobj.size();i++){
-        //заголовок
-        QDomElement objectElement = doc.createElement("object");
-        objectElement.setAttribute("id", QString::number(i+1));
-        objectsElement.appendChild(objectElement);
-
-        //проходимость
-        QDomElement durabilityElement = doc.createElement("durability");
-        durabilityElement.appendChild(doc.createTextNode(QString::number(arrobj[i].get_transp())+"%"));
-        objectElement.appendChild(durabilityElement);
-
-        //точки
-        QDomElement pointsElement = doc.createElement("points");
-        objectElement.appendChild(pointsElement);
-        for (const QPoint& p : arrobj[i].get_points()) {
-            QDomElement pointElement = doc.createElement("point");
-            pointElement.setAttribute("x", QString::number(p.x()));
-            pointElement.setAttribute("y", QString::number(p.y()));
-            pointsElement.appendChild(pointElement);
-        }
-    }
-
-    // Сохраняем в файл
+    QDomDocument doc = mapFileMaker();
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"), "", tr("XML файлы (*.xml)"));
     if (!fileName.isEmpty()) {
         QFile file(fileName);
@@ -788,6 +606,8 @@ MainWindow::~MainWindow()
 
 //добавление точки на карту
 void MainWindow::handleSceneClick(const QPointF& pos) {
+    if (windStat == 0)
+        return;
     //если задается маршрут то нельзя ставить на непроходимые
     if (windStat == 3) {
         //получаем массив всех полигонов
