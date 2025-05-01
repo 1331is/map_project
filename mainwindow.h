@@ -38,6 +38,7 @@ private slots:
     void on_mapHeight_edit_Return_Pressed();
     void on_scaleDown_but_clicked();
     void on_scaleUp_but_clicked();
+    void on_savePath_but_clicked();
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override; //обработчик события: курсор на карте
@@ -49,6 +50,7 @@ private:
     float scale;
     QVector<QPoint> arrpoint; //массив точек
     QVector<Obj> arrobj; //массив объектов
+    QVector<QPoint> path;
     void parcer(QString);
     void draw(Obj object);
     void design_set();
