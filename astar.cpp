@@ -1,15 +1,10 @@
 #include "astar.h"
 #include <queue>
 
-
-bool Node::operator<(const Node& other) const {
-    return (cost + heuristic) < (other.cost + other.heuristic);
-}
-
 // Функция расчета стоимости перемещения
 qreal getMovementCost(const QPoint& from, const QPoint& to, const QGraphicsScene* scene) {
     //Проверка пересечения с полигонами
-    qreal totalCost = 0.0;
+    qreal totalCost = 1.0;
 
     QList<QGraphicsPolygonItem*> polygons;
     foreach(QGraphicsItem* item, scene->items()) {
@@ -19,7 +14,8 @@ qreal getMovementCost(const QPoint& from, const QPoint& to, const QGraphicsScene
     }
     for (int j=0;j<polygons.size();j++) {
         if(polygons[j]->contains(to)) {
-            qreal obstruction = polygons[j]->brush().color().alpha()/255;
+            qreal obstruction = polygons[j]->brush().color().alpha();
+            obstruction /=255;
             if (obstruction >= 1.0)
                 return -1; // Полная непроходимость
             totalCost += obstruction;
@@ -32,18 +28,14 @@ qreal getMovementCost(const QPoint& from, const QPoint& to, const QGraphicsScene
 QVector<QPoint> pathSearch(const QPoint& start, const QPoint& end, const QGraphicsScene* scene) {
     QHash<QPoint, Node*> allNodes;
     QHash<qreal, Node*> sortNodes;
-    std::priority_queue<Node*, std::vector<Node*>, std::greater<Node*>> openSet;
     std::priority_queue<qreal, std::vector<qreal>, std::greater<qreal>> sortOpenSet;
     QSet<QPoint> closedSet;
-
-
 
     // 2. Создание начального узла
     Node* startNode = new Node{start, 0, 0, nullptr};
     startNode->heuristic = QLineF(start, end).length();
     allNodes[start] = startNode;
     sortNodes[startNode->heuristic+startNode->cost] = startNode;
-    openSet.push(startNode);
     sortOpenSet.push(startNode->heuristic+startNode->cost);
 
     // 3. Направления движения (8-соседняя сетка)
@@ -53,10 +45,9 @@ QVector<QPoint> pathSearch(const QPoint& start, const QPoint& end, const QGraphi
     };
 
     // 4. Основной цикл алгоритма
-    while (!openSet.empty()) {
+    while (!sortOpenSet.empty()) {
         //Node* current = openSet.top();
         Node* current = sortNodes.value(sortOpenSet.top());
-        openSet.pop();
         sortOpenSet.pop();
 
         // Цель достигнута
@@ -77,6 +68,7 @@ QVector<QPoint> pathSearch(const QPoint& start, const QPoint& end, const QGraphi
         // 5. Обработка соседей
         for (const QPoint& dir : directions) {
             QPoint neighborPos = current->pos + dir;
+
 
             // Проверка границ сцены
             if (neighborPos.x() < 0 || neighborPos.x() >= scene->width() ||
@@ -106,7 +98,6 @@ QVector<QPoint> pathSearch(const QPoint& start, const QPoint& end, const QGraphi
                 neighbor->parent = current;
 
                 if (!closedSet.contains(neighborPos)) {
-                    openSet.push(neighbor);
                     sortOpenSet.push(neighbor->cost+neighbor->heuristic);
                     sortNodes[neighbor->cost+neighbor->heuristic] = neighbor;
                 }
@@ -119,72 +110,99 @@ QVector<QPoint> pathSearch(const QPoint& start, const QPoint& end, const QGraphi
     return QVector<QPoint>();
 }
 
-//оптимизация маршрута
-QVector<QPoint> pathOptimis(QVector<QPoint> path, const QGraphicsScene* scene) {
-    qDebug() << "Пришло точек " << path.size();
-    //удаление точек с одной прямой
+//удаление лишних точек с одной прямой
+QVector<QPoint> pointExcessDel(QVector<QPoint> path) {
     QVector<QPoint> optimizedPath;
     optimizedPath.append(path.first());
-    int k = 0;
     for (int i = 0; i<path.size()-2;i++){
         if (path[i]!=optimizedPath.last())
             continue;
         for (int j=i+1;j<path.size()-1;j++){
             QPoint dir (path[j].x()-path[i].x(), path[j].y()-path[i].y());
             if (!((abs(dir.x()) == abs(dir.y())) || (dir.x() == 0) || (dir.y() == 0))) {
-                optimizedPath.append(path[j]);
+                optimizedPath.append(path[j-1]);
                 break;
             }
         }
     }
     optimizedPath.append(path.last());
-    qDebug() << "Стало точек " << optimizedPath.size();
-    path.clear();
-    path.append(optimizedPath.first());
-    //проверка на пересечения с полигонами
+    return optimizedPath;
+}
+
+//удаление лишних точек из 8-направленного пути
+QVector<QPoint> dirPointDel(QVector<QPoint> path, QList<QGraphicsPolygonItem*> polygons) {
+
+    //определяем принадлежность точек к полигонам
+    QHash<QPoint, int> allPoints;
+    for (int i=0;i<path.size();i++) {
+        for (int j = 0; j < polygons.size(); ++j) {
+            if (polygons[j]->contains(path[i]))
+                allPoints[path[i]]=polygons[j]->brush().color().alpha();
+        }
+        if (!allPoints.contains(path[i]))
+            allPoints[path[i]]=0;
+    }
+
+    QVector<QPoint> optimizedPath;
+    optimizedPath.append(path.first());
+    for (int i=0;i<path.size()-2;i++) {
+        if (path[i]!=optimizedPath.last())
+            continue;
+        for (int k=i+1;k<path.size()-1;k++) {
+            for (int j = 0; j < polygons.size(); ++j) {
+                //рисуем линию от точки до точки и проверяем пересекает ли она сторону полигона
+                QPolygonF polygon = polygons[j]->mapToScene(polygons[j]->polygon());
+                QPainterPath polygonPath;
+                polygonPath.addPolygon(polygon);
+
+                QPainterPath linePath;
+                linePath.moveTo(path[i]);
+                linePath.lineTo(path[k]);
+                QPainterPathStroker stroker;
+                stroker.setWidth(1);
+                QPainterPath strokedLine = stroker.createStroke(linePath);
+
+
+                // Проверяем пересечение
+                if (strokedLine.intersects(polygonPath)) {
+                    //если обе точки не принадлежат полигону
+                    if (allPoints[path[i]]!=polygons[j]->brush().color().alpha()&&allPoints[path[k]]!=polygons[j]->brush().color().alpha()) {
+                        if (k-1!=i) {
+                            optimizedPath.append(path[k-1]);
+                            i = k-2;
+                            break;
+                        }
+                        else {
+                            optimizedPath.append(path[k]);
+                            i = k-1;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    optimizedPath.append(path.last());
+    return optimizedPath;
+}
+
+//оптимизация маршрута
+QVector<QPoint> pathOptimis(QVector<QPoint> path, const QGraphicsScene* scene) {
+    qDebug() << "Пришло точек " << path.size();
+    //удаление лишних точек с одной прямой
+    path = pointExcessDel(path);
+    qDebug() << "Стало точек " << path.size();
+
+    //удаление лишних точек из 8-направленного пути
     QList<QGraphicsPolygonItem*> polygons;
     foreach(QGraphicsItem* item, scene->items()) {
         if (QGraphicsPolygonItem* polygon = dynamic_cast<QGraphicsPolygonItem*>(item)) {
             polygons.append(polygon);
         }
     }
-    QHash<QPoint, int> allPoints;
-    for (int i=0;i<optimizedPath.size();i++) {
-        for (int j = 0; j < polygons.size(); ++j) {
-            if (polygons[j]->contains(optimizedPath[i]))
-                allPoints[optimizedPath[i]]=polygons[j]->brush().color().alpha();
-        }
-        if (!allPoints.contains(optimizedPath[i]))
-            allPoints[optimizedPath[i]]=0;
-    }
-
-    for (int i=0;i<optimizedPath.size()-2;i++) {
-        for (int k=i+1;k<optimizedPath.size()-1;k++) {
-            for (int j = 0; j < polygons.size(); ++j) {
-                // Получаем полигон в координатах сцены
-                QPolygonF polygon = polygons[j]->mapToScene(polygons[j]->polygon());
-
-                QPainterPath linePath;
-                linePath.moveTo(optimizedPath[i]);
-                linePath.lineTo(optimizedPath[k]);
-                QPainterPathStroker stroker;
-                stroker.setWidth(1); // Минимальная толщина для точного пересечения
-                QPainterPath strokedLine = stroker.createStroke(linePath);
-                QPainterPath polygonPath;
-                polygonPath.addPolygon(polygon);
-
-                // Проверяем пересечение
-                if (strokedLine.intersects(polygonPath)) {
-                    if (allPoints[optimizedPath[i]]!=polygons[j]->brush().color().alpha()) {
-                        path.append(optimizedPath[k-1]);
-                        i=k-2;
-                    }
-                }
-            }
-        }
-    }
-    path.append(optimizedPath.last());
+    path = dirPointDel(path, polygons);
     qDebug() << "Ушло точек " << path.size();
+
     return path;
 }
 

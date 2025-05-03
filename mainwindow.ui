@@ -905,7 +905,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Скорость(км/ч): </string>
+     <string>Скорость(м/ч): </string>
     </property>
    </widget>
    <widget class="QLineEdit" name="speed_box">

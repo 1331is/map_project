@@ -254,7 +254,7 @@ void MainWindow::on_ok_but_clicked(){
     windStat = 0; //статус окна: ожидание действий
 }
 
-//парсер??
+//сейвер
 QDomDocument MainWindow::pathFileMaker(qreal pathLength, qreal pathSpeed, qreal pathTime){
     QDomDocument doc;
 
@@ -268,7 +268,7 @@ QDomDocument MainWindow::pathFileMaker(qreal pathLength, qreal pathSpeed, qreal 
     root.appendChild(length);
 
     QDomElement speed = doc.createElement("speed");
-    speed.appendChild(doc.createTextNode(QString::number(pathSpeed)+"км/ч"));
+    speed.appendChild(doc.createTextNode(QString::number(pathSpeed)+"м/ч"));
     root.appendChild(speed);
 
     QDomElement time = doc.createElement("time");
@@ -289,7 +289,7 @@ QDomDocument MainWindow::pathFileMaker(qreal pathLength, qreal pathSpeed, qreal 
     return doc;
 }
 
-//парсер??
+//сейвер
 QDomDocument MainWindow::mapFileMaker(){
     QDomDocument doc;
 
@@ -338,21 +338,40 @@ QDomDocument MainWindow::mapFileMaker(){
 
 //нажатие на кнопку сохранить маршрут
 void MainWindow::on_savePath_but_clicked() {
+    //узнаем принадлежность точек к полигонам
+    QList<QGraphicsPolygonItem*> polygons;
+    foreach(QGraphicsItem* item, scene->items()) {
+        if (QGraphicsPolygonItem* polygon = dynamic_cast<QGraphicsPolygonItem*>(item)) {
+            polygons.append(polygon);
+        }
+    }
+    QHash<QPoint, int> allPoints;
+    for (int i=0;i<path.size();i++) {
+        for (int j = 0; j < polygons.size(); ++j) {
+            if (polygons[j]->contains(path[i]))
+                allPoints[path[i]]=polygons[j]->brush().color().alpha();
+        }
+        if (!allPoints.contains(path[i]))
+            allPoints[path[i]]=0;
+    }
 
-    //длина
-    qreal pathLength = 0;
+    qreal pathLength = 0;//длина
+    bool ok;
+    qreal pathSpeed = ui->speed_box->text().toInt(&ok); //скорость
+    qreal pathTime = 0; //время
+
     for (int i = 0; i < path.size() - 1; ++i) {
         QLineF line(path[i].x(), path[i].y(), path[i+1].x(), path[i+1].y());
         pathLength += line.length();
+        qreal dur = allPoints[path[i]];
+        dur = 1.0 - dur/255.0;
+        pathTime += pathLength/pathSpeed/dur;
     }
     pathLength = pathLength/scale;
 
-    //скорость
-    bool ok;
-    qreal pathSpeed = ui->speed_box->text().toInt(&ok);
 
-    //время
-    qreal pathTime = pathLength/pathSpeed/1000;
+
+
 
     // Сохраняем в файл
     QDomDocument doc = pathFileMaker(pathLength, pathSpeed, pathTime);
@@ -716,6 +735,8 @@ void MainWindow::parcer(QString filePath)
             ui->map_box->setFixedSize(x, scene->sceneRect().height());
         if (y<670)
             ui->map_box->setFixedSize(scene->sceneRect().width(), y);
+        ui->mapHeight_edit->setText(QString::number(y));
+        ui->mapWidth_edit->setText(QString::number(x));
         qDebug() << "Разрешение: " << x << 'x' << y;
     } else {
         qDebug() << "Элемент resolution не найден";

@@ -13,9 +13,6 @@ struct Node {
     qreal cost;         // Стоимость достижения узла
     qreal heuristic;    // Эвристическая оценка
     Node* parent = nullptr;
-
-    // Для приоритетной очереди
-    bool operator<(const Node& other) const;
 };
 
 // Функция расчета стоимости перемещения
