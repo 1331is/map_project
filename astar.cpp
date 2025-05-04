@@ -18,7 +18,7 @@ qreal getMovementCost(const QPoint& from, const QPoint& to, const QGraphicsScene
             obstruction /=255;
             if (obstruction >= 1.0)
                 return -1; // Полная непроходимость
-            totalCost += obstruction;
+            totalCost /= 1-obstruction;
         }
     }
     return totalCost;

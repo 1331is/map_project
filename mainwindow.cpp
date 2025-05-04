@@ -365,7 +365,7 @@ void MainWindow::on_savePath_but_clicked() {
         pathLength += line.length();
         qreal dur = allPoints[path[i]];
         dur = 1.0 - dur/255.0;
-        pathTime += pathLength/pathSpeed/dur;
+        pathTime += line.length()/pathSpeed/dur;
     }
     pathLength = pathLength/scale;
 
