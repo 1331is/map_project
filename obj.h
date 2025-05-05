@@ -1,18 +1,19 @@
 #ifndef OBJ_H
 #define OBJ_H
 #include <QPoint>
+#include <QPolygon>
 #include <QVector>
 
 class Obj
 {
 public:
-    Obj(QVector<QPoint> pointarr, int dur);
+    Obj(QPolygonF polygon, int dur);
     int point_numb();
     int get_transp();
-    QVector<QPoint> get_points();
-
+    QVector<QPointF> get_points();
+    QPolygonF get_pol();
 private:
-    QVector<QPoint> points;
+    QPolygonF pol;
     int transp;
 };
 

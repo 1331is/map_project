@@ -191,7 +191,12 @@ void MainWindow::on_ok_but_clicked(){
         //добавление объекта в массив
         bool ok;
         int transp = ui->transp_box->text().toInt(&ok);
-        arrobj.append(Obj(arrpoint, transp));
+        QPolygonF pol;
+        if (arrpoint.size() < 3) return;
+        for (int i = 0; i < arrpoint.size(); i++) {
+            pol << arrpoint[i];
+        }
+        arrobj.append(Obj(pol, transp));
         //рисование объекта
         draw(arrobj.last());
         break;
@@ -209,6 +214,10 @@ void MainWindow::on_ok_but_clicked(){
         for (int i=0;i<arrpoint.size();i++){
             for (int j=0;j<polygons.size();j++) {
                 if(polygons[j]->contains(arrpoint[i])) {
+                    QPolygonF curr = polygons[j]->polygon();
+                    for (int k=0;k<arrobj.size();k++)
+                        if (arrobj[k].get_pol()==curr)
+                            arrobj.remove(k);
                     scene->removeItem(polygons[j]); // Удаляем из сцены
                     polygons.removeAt(j);
                 }
@@ -326,7 +335,7 @@ QDomDocument MainWindow::mapFileMaker(){
         //точки
         QDomElement pointsElement = doc.createElement("points");
         objectElement.appendChild(pointsElement);
-        for (const QPoint& p : arrobj[i].get_points()) {
+        for (const QPointF& p : arrobj[i].get_pol()) {
             QDomElement pointElement = doc.createElement("point");
             pointElement.setAttribute("x", QString::number(p.x()));
             pointElement.setAttribute("y", QString::number(p.y()));
@@ -691,7 +700,7 @@ void MainWindow::handleSceneClick(const QPointF& pos) {
 //изображение объекта на карте
 void MainWindow::draw(Obj object)
 {
-    QPolygon pol;
+    QPolygonF pol;
     if (object.point_numb() < 3) return;
     for (int i = 0; i < object.point_numb(); i++) {
         pol << object.get_points()[i];
@@ -778,8 +787,13 @@ void MainWindow::parcer(QString filePath)
             qDebug() << "Точка:" << x << "," << y;
         }
 
+        QPolygonF pol;
+        if (arrPointObj.size() < 3) return;
+        for (int i = 0; i < arrPointObj.size(); i++) {
+            pol << arrPointObj[i];
+        }
         //добавление объекта в массив объектов
-        arrobj.append(Obj(arrPointObj, transp));
+        arrobj.append(Obj(pol, transp));
 
         //рисование объекта
         draw(arrobj.last());
